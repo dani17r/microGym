@@ -7,7 +7,7 @@ const { toggleDrawer:toggleRightDrawer } = compDrawerRight();
 </script>
 
 <template>
-  <q-header class="bg-primary text-white">
+  <q-header class="bg-primary text-white fixed">
     <q-toolbar>
       <q-btn dense flat round icon="menu" @click="toggleLeftDrawer" />
 

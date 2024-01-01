@@ -19,3 +19,5 @@ export const filterNestedMenuByTitle = (menu: MenuI[], search: string): MenuI[] 
 
   return filteredMenu;
 };
+
+export const formatDateOne = 'YYYY/MM/DD h:mm:ss A';

@@ -1,7 +1,8 @@
 import { MenuI, MenuSettingDrawerlefT } from "@/types/global";
+import { formatDateOne } from "@utils/index";
 import { LocalStorage } from "quasar";
-import * as dayjs from "dayjs";
 import { reactive } from "vue";
+import dayjs from "dayjs";
 
 export let superMenuDefault = <MenuI[]>[
   {
@@ -247,16 +248,15 @@ export const columnsRoles = [
   {
     name: "permitions",
     label: "Permisos",
-    field: "permitions",
     style: "width: 100px;",
     align: "left",
   },
   {
     name: "created",
     label: "Creado el",
-    field: "created",
     sortable: true,
-    format: (val: string) => dayjs(val).format("YYYY/MM/DD hh:mmA"),
+    field: "created",
+    format: (val: string) => dayjs(val).format(formatDateOne),
     style: "width: 60px;",
     align: "left",
   },
@@ -265,13 +265,12 @@ export const columnsRoles = [
     label: "Actualizado el",
     field: "updated",
     sortable: true,
-    format: (val: string) => dayjs(val).format("YYYY/MM/DD h:mmA"),
+    format: (val: string) => dayjs(val).format(formatDateOne),
     style: "width: 60px;",
     align: "left",
   },
   {
     name: "actions",
-    label: "",
     field: "id",
     sortable: false,
     align: "center",

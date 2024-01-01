@@ -1,167 +1,147 @@
-// import { cloneDeep, isFunction } from "lodash";
+import {
+  DialogI,
+  SuperFormT,
+  SuperInputT,
+  SuperInputUnionT,
+} from "@/types/global";
 import { UnwrapNestedRefs, reactive } from "vue";
 
-interface ObjectFormI {
-  value: unknown;
-  rules: ((val: string) => true | string)[] | any[];
-}
+const modelInput = <SuperInputUnionT>{
+  rules: [],
+  value: "",
+  copy: "",
+  ref: {},
+  set(val: string) {
+    this.copy = val;
+    this.value = val;
+  },
+  isChange() {
+    let value = JSON.stringify(this.value);
+    let copy = JSON.stringify(this.copy);
+    return value != copy;
+  },
+  validate() {
+    if (this.ref) return !this.ref.validate();
+    else return false;
+  },
+  isErrors() {
+    if (this.ref) {
+      return this.ref.hasError || !this.ref.modelValue?.length;
+    } else return false;
+  },
+  reset: function () {
+    if (this.isChange()) this.value = this.copy;
+    if (this.ref) setTimeout(()=> this.ref.resetValidation());
+  },
+};
 
-interface ObjectPlusFormI {
-  set(val: string): void;
-  isChange(): boolean;
-  validate(): boolean;
-  isErrors(): boolean;
-  reset(): void;
-  ref: any;
-  copy: unknown;
-}
+export const superForm = <T>(data: T): SuperFormT<T> => {
 
-interface BasicFormT {
-  verifyIsNotChanges(): boolean;
-  checkValidation(): boolean;
-  checkIsErrors(): boolean;
-  resetGeneral(): void;
-}
+  let inputs = reactive(data as SuperInputT<T>) as SuperInputT<T>;
 
-type ObjectPartialFinallyFormI = { [key:string]: ObjectFormI & Partial<ObjectPlusFormI> };
-type ObjectFinallyFormI = { [key:string]: ObjectFormI & ObjectPlusFormI };
-type SuperFormT = ObjectPartialFinallyFormI & BasicFormT;
-
-
-export const superForm = <T extends ObjectPartialFinallyFormI>(data: T): SuperFormT => {
-
-  for (const key in data) {
-    data[key].rules = data[key].rules ?? [];
-    data[key].value = data[key].value ?? "";
-    data[key].copy = data[key].value ?? "";
-    data[key].ref = {};
-    data[key].set = function (val: string) {
-      this.copy = val;
-      this.value = val;
-    };
-    data[key].isChange = function () {
-      let value = JSON.stringify(this.value);
-      let copy = JSON.stringify(this.copy);
-      return value != copy;
-    };
-    data[key].validate = function () {
-      if (this.ref) return !this.ref.validate();
-      else return false;
-    };
-    data[key].isErrors = function () {
-      if (this.ref) {
-        return this.ref.hasError || !this.ref.modelValue?.length;
-      } else return false;
-    };
-    data[key].reset = function () {
-      if (this.ref.resetValidation) this.ref.resetValidation();
-      if (this.isChange) {
-        if (this.isChange()) this.value = this.copy;
-      }
+  for (const key in inputs) {
+    inputs[key] = {
+      ...modelInput,
+      ...inputs[key],
     };
   }
-  
-  const form = reactive<SuperFormT>({
-    ...data,
+
+  return reactive(<SuperFormT<T>>{
+    ...(inputs as SuperInputUnionT),
     checkValidation() {
-      // return this.name.validate() ||;
-      return true;
-    },
-    checkIsErrors() {
-      // return this.name.isErrors() ||;
+      for (const key in inputs) {
+        if (this[key].validate()) return true;
+      }
       return false;
     },
-    resetGeneral() {
-      // for (const key in form) {
-      //   if (!isFunction(form[key])) {
-      //     form[key].reset();
-      //   }
-      // }
+    checkIsErrors() {
+      for (const key in inputs) {
+        if (this[key].isErrors()) return true;
+      }
+      return false;
+    },
+    reset() {
+      for (const key in inputs) {
+        this[key].reset();
+      }
+    },
+    update() {
+      for (const key in inputs) {
+        this[key].copy = this[key].value;
+        this[key].reset();
+      }
     },
     verifyIsNotChanges() {
-      // return this.name.isChange() ||;
-      return true;
+      for (const key in inputs) {
+        if (this[key].isChange()) return true;
+      }
+      return false;
     },
-  });
-
-  return form;
+    getValues() {
+      let data = <any>{}; 
+      for (const key in inputs) {
+        data[key] = this[key].value;
+      }
+      return data;
+    }
+  }) as SuperFormT<T>;
 };
 
 export const superModals = <T extends object>(data: T) => {
   const modals = reactive({
     ...data,
-    toggle: (name: keyof UnwrapNestedRefs<T>): boolean => {
+    toggle(name: keyof UnwrapNestedRefs<T>): boolean {
       return (modals[name] = !modals[name] as never);
     },
   });
   return modals;
 };
 
+export const superToggle = (val=false) =>
+  reactive({
+    value: val,
+    toggle(): boolean {
+      return (this.value = !this.value);
+    },
+  });
 
-class superForm_ <T>{
-  public data: ObjectPartialFinallyFormI;
-
-  constructor(data: T) {
-    this.data = data as ObjectPartialFinallyFormI;
-
-    for (const key in this.data) {
-      this.data[key].rules = this.data[key].rules ?? [];
-      this.data[key].value = this.data[key].value ?? "";
-      this.data[key].copy = this.data[key].value ?? "";
-      this.data[key].ref = {};
-      this.data[key].set = function (_val: string) {
-        // this.copy = val;
-        // this.value = val;
-      };
-      this.data[key].isChange = function () {
-        // let value = JSON.stringify(this.value);
-        // let copy = JSON.stringify(this.copy);
-        // return value != copy;
-        return false;
-      };
-      this.data[key].validate = function () {
-        // if (this.ref) return !this.ref.validate();
-        // else return false;
-        return false;
-      };
-      this.data[key].isErrors = function () {
-        // if (this.ref) {
-        //   return this.ref.hasError || !this.ref.modelValue?.length;
-        // } else return false;
-        return false;
-      };
-      this.data[key].reset = function () {
-        // if (this.ref.resetValidation) this.ref.resetValidation();
-        // if (this.isChange) {
-        //   if (this.isChange()) this.value = this.copy;
-        // }
-      };
-    }
-  }
-};
-
-
-export class superFormClas<T> extends superForm_<T> {
-  constructor(parameters: T) {
-    super(parameters);
-  }
-  checkValidation() {
-    // return this.name.validate() ||;
-    return true;
-  }
-  checkIsErrors() {
-    // return this.name.isErrors() ||;
-    return false;
-  }
-  resetGeneral() {
-    // for (const key in form) {
-    //   if (!isFunction(form[key])) {
-    //     form[key].reset();
-    //   }
-    // }
-  }
-  verifyIsNotChanges() {
-    // return this.name.isChange() ||;
-    return true;
-  }
+interface SuperMultiModalI<Status> {
+  id?: string | null;
+  status: Status;
+  value?: boolean;
 }
+
+export const superMultiModal = <Status = string>({
+  id = null,
+  status,
+  value = false,
+}: SuperMultiModalI<Status>) =>
+  reactive({
+    value: value,
+    id: <any>id,
+    status: status,
+    toggle(value = status) {
+      this.status = value as Status;
+      this.value = !this.value;
+    },
+    changeId(id: SuperMultiModalI<Status>["id"]) {
+      if (id == null) this.id = id;
+      else if (id != this.id) this.id = id;
+    },
+  }) as DialogI<Status>;
+
+export const superModal = ({
+  id = null,
+  value = false,
+}) =>
+  reactive({
+    value: value,
+    id: <any>id,
+    toggle() {
+      this.value = !this.value;
+    },
+    changeId(id: string) {
+      if (id == null && id) this.id = id;
+      else if (id != this.id && id) this.id = id;
+    },
+  });

@@ -7,11 +7,10 @@ const { status, searchInput, searchItemsInDrawerLeft } = compDrawersLeft();
 
 <template>
   <q-drawer
-    show-if-above
-    v-model="status"
-    side="left"
     behavior="desktop"
+    v-model="status"
     :width="250"
+    side="left"
   >
     <div style="width: 100%; height: calc(100vh - 60px)">
       <q-toolbar>

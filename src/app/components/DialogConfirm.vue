@@ -1,34 +1,21 @@
 <script setup lang="ts">
-import { ref } from "vue";
-
 const emit = defineEmits(['toggle', 'yes']);
-const { modelValue, hideSaveAndClose } = $defineProps<{
+const { modelValue } = $defineProps<{
   modelValue: boolean;
-  hideSaveAndClose?: boolean;
 }>();
-
-const closeAnSave = ref(false);
 </script>
 
 <template>
   <q-dialog :model-value="modelValue" @update:model-value="emit('toggle')">
     <q-card class="shadow-none min-w-[300px]">
       <q-card-section>
-        <h1 class="text-h6">¿Estas seguro que quiere salir?</h1>
-        <p>Puedes perder los cambios realizados.</p>
-        <q-checkbox
-          label="Quiero guardar al cerrar"
-          v-if="hideSaveAndClose"
-          v-model="closeAnSave"
-          name="input-checkbox"
-          color="orange"
-          class="-ml-2"
-        />
+        <h1 class="text-h6">¿ Estas seguro de esta accion ?</h1>
+        <p>Confirmar para continuar.</p>
+        
       </q-card-section>
       <q-card-actions align="right">
         <q-btn
           @click="[emit('yes'), emit('toggle')]"
-          :color="'green'"
           icon="save"
           label="Si"
           dense
@@ -36,7 +23,6 @@ const closeAnSave = ref(false);
         />
         <q-btn
           @click="emit('toggle')"
-          :color="'red'"
           icon="cancel"
           label="No"
           dense

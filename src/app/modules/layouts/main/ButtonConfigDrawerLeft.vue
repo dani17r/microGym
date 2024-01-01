@@ -25,7 +25,7 @@ const { menuSettingDrawerLeft, changeMenuSettingDrawerLeft } = compDrawers();
             </q-item-section>
             <q-item-section side>
               <q-toggle
-                @update:model-value="() => changeMenuSettingDrawerLeft(index, menu.id)"
+                @update:model-value="changeMenuSettingDrawerLeft(index, menu.id)"
                 v-model="menu.active"
                 unchecked-icon="clear"
                 checked-icon="check"

@@ -1,30 +1,52 @@
+import { RoleI, RoleParamsI, columnI } from "@/types/global";
+import compPagination from "@composables/pagination";
 import { defineStore, storeToRefs } from "pinia";
-import { PaginateI, RoleI, columnI } from "@/types/global";
-import { pb } from "@services/main";
 import { columnsRoles } from "./static";
-import { omit } from "lodash";
+import { pb } from "@services/main";
 
-const useRolesStore = defineStore("roles", {
+const tableName = 'roles';
+const { getPagination } = compPagination(tableName);
+
+const useRolesStore = defineStore(tableName, {
   state: () => ({
+    tableName,
     columns: <columnI[]>columnsRoles,
     roles: <RoleI[]>[],
     role: <RoleI>{},
-    pagination: <PaginateI>{
-      page: 1,
-      perPage: 50,
-      totalItems: 0,
-      TotalPages: 0,
-    },
+    paginated: getPagination(),
   }),
   getters: {},
   actions: {
-    async getRoles() {
-      const result = await pb
-        .collection("roles")
-        .getList<RoleI>(1, 30, { expand: "permitions" });
-
-      this.roles = result.items;
-      this.pagination = omit(result, "items");
+    verifyLastItemCreate() {
+      this.roles.map((item) => {
+        item.last = false;
+        return item;
+      });
+    },
+    setRoles(roles: RoleI[]){
+      if(roles.length) this.roles = roles;
+    },
+    createRole(form: RoleParamsI["create"]) {
+      return pb
+        .collection<RoleI>(tableName)
+        .create(form, { expand: "permitions" })
+        .then((record) => {
+          this.verifyLastItemCreate();
+          // this.roles.push({ last: true, ...record });
+          // orderBy(this.roles, ["name"], ["desc"]);
+          return record;
+        });
+    },
+    deleteRole(id: string) {
+      return pb.collection(tableName).delete(id);
+    },
+    async multiDeleteRole(roles: RoleI[]) {
+      return await Promise.all([ 
+        roles.map(({ id }) => this.deleteRole(id)) 
+      ])
+    },
+    updateRole(role: RoleI) {
+      return pb.collection(tableName).update(role.id, role);
     },
   },
 });

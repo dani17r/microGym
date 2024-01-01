@@ -4,6 +4,7 @@ import { LocalStorage, Dark } from "quasar";
 const useGlobalStore = defineStore("global", {
   state: () => ({
     modeDark: Boolean(LocalStorage.getItem("modeDark")),
+    hideBtnModeDark: Boolean(LocalStorage.getItem("hideBtnModeDark")),
   }),
   getters: {
     isDark(): Boolean {
@@ -16,6 +17,10 @@ const useGlobalStore = defineStore("global", {
       Dark.toggle();
       this.modeDark = !this.modeDark;
       LocalStorage.set("modeDark", this.modeDark);
+    },
+    hideBtnModeDarkToggle() {
+      this.hideBtnModeDark = !this.hideBtnModeDark;
+      LocalStorage.set("hideBtnModeDark", this.hideBtnModeDark);
     },
   },
 });

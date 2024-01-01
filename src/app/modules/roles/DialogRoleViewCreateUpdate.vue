@@ -1,119 +1,75 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, watchEffect } from "vue";
 import DialogCloseAndSave from "@components/DialogCloseAndSave.vue";
-// import { superFormClas } from "@utils/supers";
+import { computed, onMounted, ref, watchEffect } from "vue";
+import { superForm, superToggle } from "@utils/supers";
+import { PermitionI, RoleI } from "@/types/global";
 import { capitalize } from "lodash";
 import { pb } from "@services/main";
-import * as dayjs from "dayjs";
+import dayjs from "dayjs";
 
-const emit = defineEmits(["toggle"]);
-const { id, status, modelValue } = $defineProps<{
+const emit = defineEmits(["toggle", "create", "update"]);
+const props = $defineProps<{
   id: string | null;
   status: "view" | "updated" | "new";
   modelValue: boolean;
+  loading: boolean;
 }>();
 
-const isModeUpdate = computed(() => (status == "updated" ? true : false));
-const isModeAdd = computed(() => (status == "new" ? true : false));
+const isModeUpdate = computed(() => (props.status == "updated" ? true : false));
+const isModeAdd = computed(() => (props.status == "new" ? true : false));
 const modeUpdate = ref(isModeUpdate.value);
 const modeAdd = ref(isModeAdd.value);
 const filterOfPermitions = ref();
+
 const allPermitions = ref();
-const role = ref();
+const role = ref<RoleI>();
 
-// const formExample = new superFormClas({
-//   name: {
-//     value: '',
-//     rules: [(val: string) => (val && val.length > 0) || "No puede estar vacio"],
-//   },
-//   permitions: {
-//     value: <any[]>[],
-//     rules: [(val: string) => (val && val.length > 0) || "No puede estar vacio"],
-//   }
-// });
-
-// console.log(formExample.name.set('a')); //Aqui name no existe
-// console.log(formExample.data.a.rules);
-// console.log(formExample.a.);
-
-const form = reactive({
+const form = superForm({
   name: {
     value: "",
-    copy: "",
-    ref: <any>{},
     rules: [(val: string) => (val && val.length > 0) || "No puede estar vacio"],
-    set(val: string) {
-      this.copy = val;
-      this.value = val;
-    },
-    isChange() {
-      let value = JSON.stringify(this.value);
-      let copy = JSON.stringify(this.copy);
-      return value != copy;
-    },
-    validate() {
-      if(this.ref) return !this.ref.validate();
-      else return false;
-    },
-    isErrors() {
-      if(this.ref) {
-        return this.ref.hasError || !this.ref.modelValue?.length;
-      } else return false
-    },
-    reset() {
-      if (this.ref.resetValidation) this.ref.resetValidation();
-      if (this.isChange()) this.value = this.copy;
-    },
   },
   permitions: {
-    value: <any[]>[],
-    copy: <any[]>[],
-    ref: <any>{},
+    value: <PermitionI[]>[],
     rules: [(val: string) => (val && val.length > 0) || "No puede estar vacio"],
-    set(val: any[]) {
-      this.copy = val;
-      this.value = val;
-    },
-    isChange() {
-      let value = JSON.stringify(this.value);
-      let copy = JSON.stringify(this.copy);
-      return value !== copy;
-    },
-    validate() {
-      if(this.ref) return !this.ref.validate();
-      else return false;
-    },
-    isErrors() {
-      if(this.ref) {
-        return this.ref.hasError || !this.ref.modelValue?.length;
-      } else return false
-    },
-    reset() {
-      if (this.ref.resetValidation) this.ref.resetValidation();
-      if (this.isChange()) this.value = this.copy;
-    },
-  },
-  checkValidation() {
-    return this.name.validate() || this.permitions.validate();
-  },
-  checkIsErrors() {
-    return this.name.isErrors() || this.permitions.isErrors();
-  },
-  reset() {
-    this.name.reset();
-    this.permitions.reset();
-  },
-  verifyIsNotChanges() {
-    return this.name.isChange() || this.permitions.isChange();
   },
 });
 
-const dialog = reactive({
-  value: false,
-  toggle() {
-    this.value = !this.value;
-  },
-});
+const cancel = () => {
+  if (isModeUpdate.value) {
+    emit('toggle');
+  }
+  else {
+    modeUpdate.value = false;
+    form.reset();
+  }
+};
+
+const edite = () => {
+  modeUpdate.value = true;
+};
+
+const save = () => {
+  if(!form.verifyIsNotChanges() || !form.checkValidation()) {
+    let data = {
+      permitions: form.permitions.value.map(({ id }: PermitionI) => id),
+      name: form.name.value,
+      id: props.id,
+    }
+    emit('update', data);
+    form.update();
+  }
+};
+
+const newSave = () => {
+  emit('create', {
+    name: form.name.value,
+    permitions: form.permitions.value.map(({ id }: PermitionI) => id),
+  })
+  form.reset();
+};
+
+const dialog = superToggle();
 
 const filter = (val: string, update: (arg: any) => void) => {
   if (val === "") {
@@ -138,31 +94,35 @@ onMounted(() => {
 });
 
 watchEffect(() => {
-  modeUpdate.value = isModeUpdate.value;
-  modeAdd.value = isModeAdd.value;
-
-  if (!modelValue) {
+  if (props.modelValue) {
+    /** Solo cuando el modal se abra */
+    
+    modeUpdate.value = isModeUpdate.value;
+    modeAdd.value = isModeAdd.value;
+    
+    if (props.status=='new') {
+      form.permitions.set([]);
+      form.name.set("");
+    }
+    
+    if (props.id) {
+      pb.collection("roles")
+        .getOne<RoleI>(props.id, { expand: "permitions" })
+        .then((data) => {
+          data.created = dayjs(data.created).format("YYYY/MM/DD hh:mmA");
+          data.updated = dayjs(data.updated).format("YYYY/MM/DD hh:mmA");
+          data.name = capitalize(data.name);
+  
+          form.permitions.set(data.expand.permitions);
+          form.name.set(data.name);
+          role.value = data;
+        });
+    }
+  }
+  else {
     /* Cuando se cierre el modal modelValue == false 
       Entonces desacticamos los campos en modo edicion */
     modeUpdate.value = false;
-  }
-
-  if (id) {
-    pb.collection("roles")
-      .getOne(id, { expand: "permitions" })
-      .then((data: any) => {
-        data.created = dayjs(data.created).format("YYYY/MM/DD hh:mmA");
-        data.updated = dayjs(data.updated).format("YYYY/MM/DD hh:mmA");
-        data.name = capitalize(data.name);
-
-        form.permitions.set(data.expand.permitions);
-        form.name.set(data.name);
-        role.value = data;
-      });
-  } else {
-    form.permitions.set([]);
-    form.name.set("");
-    role.value = null;
   }
 });
 </script>
@@ -172,9 +132,9 @@ watchEffect(() => {
     @shake="[dialog.toggle(), form.checkValidation()]"
     :persistent="form.verifyIsNotChanges()"
     @update:model-value="emit('toggle')"
-    :model-value="modelValue"
+    :model-value="props.modelValue"
   >
-    <q-card class="shadow-none min-w-[510px]">
+    <q-card class="shadow-none min-w-[510px] relative">
       <q-card-section>
         <div v-if="role" class="text-xs float-right text-right">
           <p>creado:{{ role.created }}</p>
@@ -188,7 +148,7 @@ watchEffect(() => {
         <div class="text-h6">
           <q-input
             :class="{ 'q-input-modify': !modeUpdate && !modeAdd }"
-            :ref="(el) => (form.name.ref = el)"
+            :ref="(el: any) => (form.name.ref = el)"
             :disable="!modeUpdate && !modeAdd"
             v-model="form.name.value"
             :rules="form.name.rules"
@@ -201,8 +161,8 @@ watchEffect(() => {
       <q-card-section class="q-pt-none">
         <q-select
           :class="{ 'q-input-modify': !modeUpdate && !modeAdd }"
+          :ref="(el: any) => (form.permitions.ref = el)"
           popup-content-class="shadow-none scroll"
-          :ref="(el) => (form.permitions.ref = el)"
           :disable="!modeUpdate && !modeAdd"
           v-model="form.permitions.value"
           :rules="form.permitions.rules"
@@ -212,9 +172,9 @@ watchEffect(() => {
           display-value-html
           @filter="filter"
           label="Permisos"
+          use-input
           use-chips
           clearable
-          use-input
           multiple
         >
           <template v-slot:no-option>
@@ -240,16 +200,16 @@ watchEffect(() => {
         <template v-if="modeAdd">
           <q-btn @click="form.reset()" label="Limpiar" flat />
           <q-btn
-            @click=""
+            :disabled="form.checkIsErrors()"
+            @click="newSave()"
             :color="'green'"
             label="Aceptar"
             flat
-            :disabled="form.checkIsErrors()"
           />
         </template>
         <template v-else>
           <q-btn
-            @click="modeUpdate = true"
+            @click="edite()"
             v-if="!modeUpdate"
             :color="'white'"
             label="Editar"
@@ -257,27 +217,25 @@ watchEffect(() => {
           />
           <div v-else>
             <q-btn
-              flat
-              :color="'red'"
+              @click="cancel()"
               label="Cancelar"
-              @click="
-                [
-                  !isModeUpdate ? (modeUpdate = false) : null,
-                  form.reset(),
-                ]
-              "
-              v-close-popup="isModeUpdate"
+              :color="'red'"
+              flat
             />
             <q-btn
-              flat
-              :color="'green'"
-              label="Guardar"
-              @click="[form.checkValidation(), form.verifyIsNotChanges()]"
               :disabled="form.checkIsErrors() || !form.verifyIsNotChanges()"
+              :color="'green'"
+              @click="save()"
+              label="Guardar"
+              flat
             />
           </div>
         </template>
       </q-card-actions>
+
+       <q-inner-loading :showing="props.loading">
+        <q-spinner-hourglass color="primary" size="2em" />
+      </q-inner-loading>
     </q-card>
   </q-dialog>
 

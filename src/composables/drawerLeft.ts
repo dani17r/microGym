@@ -3,15 +3,18 @@ import compPreferences from "@composables/preferences";
 import { filterNestedMenuByTitle } from "@utils/index";
 import { LocalStorage } from "quasar";
 import { cloneDeep } from "lodash";
-import { ref } from "vue";
+import { reactive, ref } from "vue";
 import {
   menuSettingDrawerLeft,
   superMenuDefault,
 } from "@store/static";
 
+const status = ref(Boolean(LocalStorage.getItem("drawerLeft")));
 let superMenu = ref(superMenuDefault);
 const searchInput = ref("");
-const status = ref(false);
+const lifecycle = reactive({
+  onMount: false
+})
 
 export default () => {
   const { changeUserPreferences, userPreferences } = compPreferences();
@@ -36,6 +39,7 @@ export default () => {
 
   const toggleDrawer = () => {
     status.value = !status.value;
+    LocalStorage.set("drawerLeft", status.value);
   };
 
   const changeMenuSettingDrawerLeft = (
@@ -86,10 +90,15 @@ export default () => {
   };
 
   //------------------
-  (() => {
-    runMenuDrawer();
-    runMenuDrawerSetting();
-  })();
+  const run = () => {
+    if (!lifecycle.onMount) {
+      runMenuDrawer();
+      runMenuDrawerSetting();
+      lifecycle.onMount = true;
+    }
+  };
+
+  run();
 
   return {
     changeMenuSettingDrawerLeft,

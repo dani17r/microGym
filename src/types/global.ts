@@ -1,3 +1,5 @@
+import { Ref } from "vue";
+
 export interface MenuI {
   title: string;
   urlName: string;
@@ -32,9 +34,14 @@ export interface PermitionI {
   status: boolean;
   created: string;
   updated: string;
+  description: string;
 }
 
-export interface RoleI {
+interface OptionsI {
+  last?: boolean,
+}
+
+export interface RoleI extends OptionsI {
   id: string;
   name: string;
   created: string;
@@ -43,6 +50,13 @@ export interface RoleI {
     permitions: PermitionI[];
   };
   permitions: string[];
+}
+
+export interface RoleParamsI {
+  create: {
+    name: string;
+    permitions: string[];
+  };
 }
 
 export interface columnI {
@@ -61,7 +75,11 @@ export interface PaginateI {
   page: number;
   perPage: number;
   totalItems: number;
-  TotalPages?: number;
+  TotalPages: number;
+  sort: {
+    field: string;
+    order: "asc" | "desc";
+  };
 }
 
 export interface TableRequestPropI {
@@ -75,10 +93,62 @@ export interface TableRequestPropI {
   getCellValue: (col: any, row: any) => any;
 }
 
-export interface DialogI {
+export type StatusVieUpdNewT = "view" | "updated" | "new";
+
+export interface DialogI <Status>{
   value: boolean;
   id: string | null;
-  status: "view" | "updated" | 'new';
+  status: Status;
   changeId: (id: string|null) => void;
-  toggle: (value?: "view" | "updated" | 'new') => void;
+  toggle: (value?: Status) => void;
+}
+
+interface BasicInputI {
+  value: any
+  rules: ((val: string) => true | string)[];
+}
+
+interface InputI {
+  set(val: any): void;
+  isChange(): boolean;
+  validate(): boolean;
+  isErrors(): boolean;
+  reset(): void;
+  ref?: Object|any;
+  copy: any;
+}
+
+interface FormI <T>{
+  verifyIsNotChanges(): boolean;
+  checkValidation(): boolean;
+  checkIsErrors(): boolean;
+  getValues(): { [key in keyof T]: keyof T };
+  update(): void;
+  reset(): void;
+}
+
+export type SuperInputUnionT = InputI & BasicInputI;
+export type SuperInputT<T> = { [key in keyof T]: SuperInputUnionT };
+export type SuperFormT<T> = SuperInputT<T> & FormI<T>;
+
+export interface CompTableParamsI<T> {
+  setData: (...args: any) => void;
+  paginated: Ref<PaginateI>;
+  tableName: string;
+  data: Ref<T[]>;
+}
+export interface QueryDataTableI {
+  expand?: string;
+  filter?: string;
+  sort?: string;
+}
+
+export interface EventSelectionTable {
+  rows: readonly any[];
+  keys: readonly any[];
+  added: boolean;
+  evt: Event & {
+    ctrlKey?: Boolean;
+    shiftKey?: boolean;
+  };
 }
