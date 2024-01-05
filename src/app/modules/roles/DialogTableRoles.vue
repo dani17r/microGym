@@ -116,6 +116,7 @@ watchEffect(() => {
           form.permitions.set(data.expand.permitions);
           form.name.set(data.name);
           role.value = data;
+          form.update();
         });
     }
   }

@@ -33,6 +33,11 @@ export default createRouter({
               name: "roles",
               component: () => import("@pages/RolesPage.vue"),
             },
+            {
+              path: "permitions",
+              name: "permitions",
+              component: () => import("@pages/PermitionsPage.vue"),
+            },
           ],
         },
         {

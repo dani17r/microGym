@@ -1,12 +1,14 @@
 import compPagination from "@composables/pagination";
 import { pb } from "@services/main";
 import { computed, ref } from "vue";
+import { useQuasar } from "quasar";
 import {
   CompTableParamsI,
   EventSelectionTable,
   QueryDataTableI,
   TableRequestPropI,
 } from "@/types/global";
+
 
 export default <T>(params: CompTableParamsI<T>) => {
   const { changePagination } = compPagination(params.tableName);
@@ -16,6 +18,7 @@ export default <T>(params: CompTableParamsI<T>) => {
   const loading = ref(false);
   const filtering = ref("");
   const tableRef = ref();
+  const $q = useQuasar()
 
   const pagination = ref({
     descending: params.paginated.value.sort.order == "desc",
@@ -89,8 +92,14 @@ export default <T>(params: CompTableParamsI<T>) => {
     lastIndex.value = rowIndex;
     document.getSelection()?.removeAllRanges();
 
+    if ($q.platform.is.mobile === true) evt.ctrlKey = true;
+    else if (evt !== Object(evt)) {
+      selected.value = added === true ? rows : []
+      return
+    }
+
     const operateSelection = (selRow: string[]) => {
-      if (added == true) {
+      if (added === true) {
         const selectedIndex = selected.value.indexOf(selRow);
         if (selectedIndex === -1) {
           selected.value = selected.value.concat(selRow);
@@ -106,7 +115,7 @@ export default <T>(params: CompTableParamsI<T>) => {
       }
     };
 
-    if (localLastIndex == null || evt.shiftKey != true) {
+    if (localLastIndex == null || evt.shiftKey !== true) {
       operateSelection(row);
       return;
     }

@@ -29,12 +29,20 @@ export type MenuSettingDrawerlefT = Omit<
 >[];
 
 export interface PermitionI {
-  id: string;
-  name: string;
+  description: string;
+  updated: string;
   status: boolean;
   created: string;
-  updated: string;
-  description: string;
+  name: string;
+  id: string;
+}
+
+export interface PermitionParamsI {
+  create: {
+    description: string;
+    status: boolean;
+    name: string;
+  };
 }
 
 interface OptionsI {
@@ -94,6 +102,7 @@ export interface TableRequestPropI {
 }
 
 export type StatusVieUpdNewT = "view" | "updated" | "new";
+export type StatusUpdNewT = "updated" | "new";
 
 export interface DialogI <Status>{
   value: boolean;

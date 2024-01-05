@@ -21,17 +21,17 @@ const modelInput = <SuperInputUnionT>{
     return value != copy;
   },
   validate() {
-    if (this.ref) return !this.ref.validate();
+    if (this.ref?.validate) return !this.ref.validate();
     else return false;
   },
   isErrors() {
-    if (this.ref) {
-      return this.ref.hasError || !this.ref.modelValue?.length;
+    if (this.ref?.hasError) {
+      return this.ref.hasError;
     } else return false;
   },
   reset: function () {
     if (this.isChange()) this.value = this.copy;
-    if (this.ref) setTimeout(()=> this.ref.resetValidation());
+    if (this.ref?.resetValidation) setTimeout(()=> this.ref.resetValidation());
   },
 };
 

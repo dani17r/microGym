@@ -1,38 +1,48 @@
-// import { defineStore, storeToRefs } from "pinia";
-// import { PaginateI, RoleI, RoleParams, columnI } from "@/types/global";
-// import { pb } from "@services/main";
-// import { columnsRoles } from "./static";
-// import { omit } from "lodash";
+import { PermitionI, PermitionParamsI, columnI } from "@/types/global";
+import compPagination from "@composables/pagination";
+import { defineStore, storeToRefs } from "pinia";
+import { columnsPermitions } from "./static";
+import { pb } from "@services/main";
 
-// const useRolesStore = defineStore("roles", {
-//   state: () => ({
-//     columns: <columnI[]>columnsRoles,
-//     roles: <RoleI[]>[],
-//     role: <RoleI>{},
-//     pagination: <PaginateI>{
-//       page: 1,
-//       perPage: 50,
-//       totalItems: 0,
-//       TotalPages: 0,
-//     },
-//   }),
-//   getters: {},
-//   actions: {
-//     async getAll() {
-//       pb.collection("permitions")
-//         .getFullList()
-//         .then((data) => {
-//           filterOfPermitions.value = data;
-//           allPermitions.value = data;
-//         });
-//     },
-//   },
-// });
+const tableName = 'permitions';
+const { getPagination } = compPagination(tableName);
 
-// export default () => {
-//   const useStore = useRolesStore();
-//   return {
-//     ...useStore,
-//     ...storeToRefs(useStore),
-//   };
-// };
+const usePermitionsStore = defineStore(tableName, {
+  state: () => ({
+    tableName,
+    columns: <columnI[]>columnsPermitions,
+    permitions: <PermitionI[]>[],
+    permition: <PermitionI>{},
+    paginated: getPagination(),
+  }),
+  getters: {},
+  actions: {
+    setPermitions(permitions: PermitionI[]) {
+      if (permitions.length) this.permitions = permitions;
+    },
+    createPermition(form: PermitionParamsI["create"]) {
+      return pb
+        .collection<PermitionI>(tableName)
+        .create(form)
+    },
+    deletePermition(id: string) {
+      return pb.collection(tableName).delete(id);
+    },
+    async multiDeletePermition(permitions: PermitionI[]) {
+      return await Promise.all([
+        permitions.map(({ id }) => this.deletePermition(id))
+      ])
+    },
+    updatePermition(permition: PermitionI) {
+      return pb.collection(tableName).update(permition.id, permition);
+    },
+  },
+});
+
+export default () => {
+  const useStore = usePermitionsStore();
+  return {
+    ...useStore,
+    ...storeToRefs(useStore),
+  };
+};
